@@ -2,7 +2,6 @@ pipeline {
     agent { label 'podman-agent' }
 
     options {
-        timestamps()
         disableConcurrentBuilds()
     }
 
@@ -23,7 +22,7 @@ pipeline {
         stage('Build Image with Podman') {
             steps {
                 sh '''
-                  echo "Using Podman to build image"
+                  echo "Building image using Podman"
                   podman version
                   podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                 '''
@@ -33,7 +32,6 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  echo "Deploying application to Kubernetes"
                   kubectl apply -f k8s/deployment.yaml
                   kubectl apply -f k8s/service.yaml
                 '''
@@ -43,7 +41,6 @@ pipeline {
         stage('Wait for Pods') {
             steps {
                 sh '''
-                  echo "Waiting for deployment rollout"
                   kubectl rollout status deployment/feature-test-service \
                     -n ${K8S_NAMESPACE}
                 '''
@@ -53,7 +50,6 @@ pipeline {
         stage('Run Feature & Bug-Fix Tests') {
             steps {
                 sh '''
-                  echo "Running API validation tests"
                   SERVICE_IP=$(kubectl get svc feature-test-service \
                     -n ${K8S_NAMESPACE} \
                     -o jsonpath='{.spec.clusterIP}')
@@ -66,10 +62,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Podman-based pipeline completed successfully"
+            echo "✅ Pipeline completed successfully"
         }
         failure {
-            echo "❌ Pipeline failed – check logs"
+            echo "❌ Pipeline failed"
         }
     }
 }
