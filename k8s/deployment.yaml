@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: feature-test-container
-          image: feature-test-service:latest
-          imagePullPolicy: IfNotPresent
+          image: docker.io/saiprasad361/feature-test-service:latest
+          imagePullPolicy: Always
           env:
             - name: FEATURE_VERSION
               value: "v2-feature-enabled"

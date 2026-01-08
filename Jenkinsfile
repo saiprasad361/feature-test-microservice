@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "feature-test-service"
         IMAGE_TAG  = "latest"
+        DOCKER_REGISTRY = "docker.io/saiprasad361"
         K8S_NAMESPACE = "default"
     }
 
@@ -15,20 +16,24 @@ pipeline {
             }
         }
 
-        stage('Build Image with Podman') {
+        stage('Build Image with Kaniko') {
             steps {
-                sh '''
-                  echo "Building container image using Podman"
-                  podman version
-                  podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                '''
+                container('kaniko') {
+                    sh '''
+                      echo "Building image using Kaniko"
+                      /kaniko/executor \
+                        --context $PWD \
+                        --dockerfile Dockerfile \
+                        --destination ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
+                        --cache=true
+                    '''
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  echo "Deploying application to Kubernetes"
                   kubectl apply -f k8s/deployment.yaml
                   kubectl apply -f k8s/service.yaml
                 '''
@@ -47,7 +52,6 @@ pipeline {
         stage('Run Feature & Bug-Fix Tests') {
             steps {
                 sh '''
-                  echo "Running API tests"
                   SERVICE_IP=$(kubectl get svc feature-test-service \
                     -n ${K8S_NAMESPACE} \
                     -o jsonpath='{.spec.clusterIP}')
