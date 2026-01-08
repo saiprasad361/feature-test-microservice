@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feature-test-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: feature-test
+  template:
+    metadata:
+      labels:
+        app: feature-test
+    spec:
+      containers:
+        - name: feature-test-container
+          image: feature-test-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: FEATURE_VERSION
+              value: "v2-feature-enabled"
+            - name: BUGFIX_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
