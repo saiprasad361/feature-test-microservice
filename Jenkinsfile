@@ -1,9 +1,5 @@
 pipeline {
-    agent { label 'podman-agent' }
-
-    options {
-        disableConcurrentBuilds()
-    }
+    agent any
 
     environment {
         IMAGE_NAME = "feature-test-service"
@@ -22,7 +18,7 @@ pipeline {
         stage('Build Image with Podman') {
             steps {
                 sh '''
-                  echo "Building image using Podman"
+                  echo "Building container image using Podman"
                   podman version
                   podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                 '''
@@ -32,6 +28,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                  echo "Deploying application to Kubernetes"
                   kubectl apply -f k8s/deployment.yaml
                   kubectl apply -f k8s/service.yaml
                 '''
@@ -50,6 +47,7 @@ pipeline {
         stage('Run Feature & Bug-Fix Tests') {
             steps {
                 sh '''
+                  echo "Running API tests"
                   SERVICE_IP=$(kubectl get svc feature-test-service \
                     -n ${K8S_NAMESPACE} \
                     -o jsonpath='{.spec.clusterIP}')
