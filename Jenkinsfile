@@ -15,11 +15,11 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image (LOCAL ONLY)') {
+        stage('Build Image with Podman (LOCAL)') {
             steps {
                 sh '''
-                  echo "Building Docker image locally (no push)"
-                  docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                  echo "Building image using Podman (no push)"
+                  podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                 '''
             }
         }
@@ -27,7 +27,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  echo "Deploying to Kubernetes using local image"
+                  echo "Deploying to Kubernetes using local Podman image"
                   kubectl apply -f k8s/deployment.yaml
                   kubectl rollout restart deployment/feature-test-service
                 '''
@@ -37,7 +37,7 @@ pipeline {
         stage('Verify Pods') {
             steps {
                 sh '''
-                  echo "Waiting for pods to become Ready"
+                  echo "Verifying pod readiness"
                   kubectl rollout status deployment/feature-test-service \
                     -n ${NAMESPACE} --timeout=120s
                 '''
@@ -47,10 +47,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Microservice is running successfully on Kubernetes"
+            echo "✅ Image built with Podman and microservice is running on Kubernetes"
         }
         failure {
-            echo "❌ Deployment failed or pods not ready"
+            echo "❌ Build or deployment failed"
         }
     }
 }
