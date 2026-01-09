@@ -2,11 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: feature-test-service
+  namespace: default
 spec:
   selector:
-    app: feature-test
+    app: feature-test-service
   ports:
-    - port: 80
+    - protocol: TCP
+      port: 80
       targetPort: 5000
   type: ClusterIP
 

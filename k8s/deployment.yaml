@@ -2,31 +2,52 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: feature-test-service
+  namespace: default
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: feature-test
+      app: feature-test-service
   template:
     metadata:
       labels:
-        app: feature-test
+        app: feature-test-service
     spec:
       containers:
         - name: feature-test-container
           image: docker.io/saiprasad361/feature-test-service:latest
           imagePullPolicy: Always
+
           env:
             - name: FEATURE_VERSION
               value: "v2-feature-enabled"
             - name: BUGFIX_ENABLED
               value: "true"
+
           ports:
             - containerPort: 5000
+
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 5000
             initialDelaySeconds: 5
             periodSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
 
