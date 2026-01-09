@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: feature-test-container
-          image: docker.io/saiprasad361/feature-test-service:latest
-          imagePullPolicy: Always
+          image: feature-test-service:local
+          imagePullPolicy: Never
 
           env:
             - name: FEATURE_VERSION

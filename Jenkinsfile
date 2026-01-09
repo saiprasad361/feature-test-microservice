@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "saiprasad361/feature-test-service"
-        IMAGE_TAG  = "latest"
-        K8S_NAMESPACE = "default"
+        IMAGE_NAME = "feature-test-service"
+        IMAGE_TAG  = "local"
+        NAMESPACE  = "default"
     }
 
     stages {
@@ -15,36 +15,31 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image (Kaniko)') {
+        stage('Build Docker Image (LOCAL ONLY)') {
             steps {
-                container('kaniko') {
-                    sh '''
-                      echo "Building and pushing Docker image"
-                      /kaniko/executor \
-                        --context $PWD \
-                        --dockerfile Dockerfile \
-                        --destination docker.io/${IMAGE_NAME}:${IMAGE_TAG} \
-                        --cache=true
-                    '''
-                }
+                sh '''
+                  echo "Building Docker image locally (no push)"
+                  docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  echo "Deploying application to Kubernetes"
+                  echo "Deploying to Kubernetes using local image"
                   kubectl apply -f k8s/deployment.yaml
-                  kubectl apply -f k8s/service.yaml
+                  kubectl rollout restart deployment/feature-test-service
                 '''
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify Pods') {
             steps {
                 sh '''
+                  echo "Waiting for pods to become Ready"
                   kubectl rollout status deployment/feature-test-service \
-                    -n ${K8S_NAMESPACE}
+                    -n ${NAMESPACE} --timeout=120s
                 '''
             }
         }
@@ -52,10 +47,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Image built, pushed, and deployed successfully"
+            echo "✅ Microservice is running successfully on Kubernetes"
         }
         failure {
-            echo "❌ Pipeline failed"
+            echo "❌ Deployment failed or pods not ready"
         }
     }
 }
